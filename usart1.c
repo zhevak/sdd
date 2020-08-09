@@ -53,12 +53,15 @@ void USART1_IRQHandler(void)
         
       if (next == rxOut)
       { // Кольцевой Буфер заполнени полностью. Принятый байт откидываем
+        // TODO Зажечь TX_LED
+        RLED3_ON();
         ;
       }
       else
       { // В кольцевом буфере есть место для сохранения принятого байта
         rxBuf[rxIn] = data;
         rxIn = next;
+        RLED1_ON();
       }
       
       /*
@@ -102,7 +105,7 @@ void USART1_IRQHandler(void)
     USART1->CR1 &= ~(USART_CR1_TCIE);  // Выключаем прывания от передатчика
     
     // TODO Погасить TX_LED
-    GLED2_OFF();
+    GLED1_OFF();
   }
 }
 
@@ -157,7 +160,7 @@ bool usart1_readByte(uint8_t *byte)
   }
   else
   { // В кольцевом буфере нет принятых байтов
-    ;
+    RLED1_OFF();
   }
   
 
@@ -194,14 +197,12 @@ void usart1_writeByte(uint8_t byte)
 {
   uint8_t next = txIn + 1;
 
-  // TODO Погасить TX_LED
-  GLED2_OFF();
-
   if (next >= TXBUFSIZE)
     next = 0; // Закольцовка буфера
     
   while (next == txOut)
-    ; // Ждём момента, когда освободится место в кольцевом буфере передатчика для символа
+    RLED4_ON(); // Ждём момента, когда освободится место в кольцевом буфере передатчика для символа
+  RLED4_OFF();
 
   txBuf[txIn] = byte; // Записываем в кольцевой буфер передатчика
   txIn = next;
@@ -209,6 +210,9 @@ void usart1_writeByte(uint8_t byte)
   // Разрешаем прерывание по пустому буферу передатчика.
   // Если прерывание было разрешено, то повторное разрешение не повлияет на работу передатчика.
   USART1->CR1 |= (USART_CR1_TXEIE);
+
+  // TODO Зажечь TX_LED
+  GLED1_ON();
 }
 
 
